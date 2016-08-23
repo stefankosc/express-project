@@ -8,13 +8,15 @@ app.engine('handlebars', hb());
 app.set('view engine', 'handlebars');
 
 app.use(express.static(__dirname + '/projects'));
+app.use(express.static(__dirname + '/static'));
+
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({
     extended: false
 }));
 
 app.use(function (req, res, next) {
-    if (!req.cookies.cook) {
+    if (!req.cookies.cookied) {
         if (!req.url.startsWith('/name')) {
             res.redirect('/name/index.html');
             return;
@@ -23,17 +25,34 @@ app.use(function (req, res, next) {
     next();
 });
 
-var directory = ['/projects/hangMan/', '/projects/kittyWebsite/', '/projects/ticker/', '/projects/spotifySearch/', '/projects/reichstagWebsite/'];
+var directory = ['/kittyWebsite/', '/ticker/', '/spotifySearch/', '/reichstagWebsite/', '/hangMan/'];
 var dataForTemplate = {
     projects: directory.map(function(item) {
         return {
-            url: item,
-            text: item.slice(10)
-        };
+            url: '/projects' + item,
+            text: item.slice(1, -1)
+        }
     })
 }
-console.log(dataForTemplate.projects);
+
+app.get('/projects/:name', function(req, res) {
+
+    var matched = directory.some(function(item) {
+        return item.slice(1,-1) == req.params.name;
+    })
+    if (matched) {
+        var description = require('./projects/' + req.params.name + '/description.json').description;
+        res.render('project', {
+            description: 'This is ' + description + ' ' + req.params.name,
+            link: req.params.name,
+            layout: 'myLayout'
+        })
+    } else {
+        res.sendStatus(404);
+    }
+})
 app.get('/website', function (req, res) {
+
     res.render('website', dataForTemplate);
 });
 
@@ -47,9 +66,9 @@ app.post('/name', function(req, res) {
         res.redirect('/name/index.html');
         return;
     } else {
-        res.cookie('cook', 'value');
+        res.cookie('cookied', 'value');
         res.redirect('/hello/world');
-    };
+    }
 });
 
 app.get('/hello/world', function(req, res) {
