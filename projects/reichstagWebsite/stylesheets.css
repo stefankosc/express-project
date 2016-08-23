@@ -1,0 +1,182 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0px;
+  background-color: #fff;
+  background-size: cover;
+}
+.top {
+  width: 100%;
+  top: 0px;
+  background-color: #fff;
+}
+#menu {
+  float: right;
+  margin: 22px 22px;
+  height: 40px;
+  cursor: pointer;
+}
+#all {
+  position: relative;
+  padding-top: 0;
+}
+.sidemenu {
+  position: fixed;
+  display: inline-block;
+  right: 0px;
+  top: 0px;
+  width: 140px;
+  height: 100%;
+  float: right;
+  z-index: 350;
+  background-color: white;
+  transition: transform;
+  transform: translateX(+100%);
+}
+.sidemenu.move {
+  transition: transform;
+  transform: translateX(0%);
+  transition-duration: 0.5s;
+  z-index: 360;
+}
+.sidemenu p {
+  margin-top: 15px;
+  padding-left: 20px;
+  color: blue;
+  font-size: 25px;
+}
+.opcje {
+  cursor: pointer;
+}
+#close{
+  font-size: 25px;
+  text-align: right;
+  padding-right: 15px;
+  padding-top: 25px;
+
+}
+#logout {
+  font-style: italic;
+  font-size: 15px;
+}
+.semitransparent {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: black;
+  opacity: 0.5;
+}
+.Reichstag {
+  margin: 0px;
+  width: 100%;
+  height: 100%;
+  vertical-align: bottom;
+}
+.text {
+  position: absolute;
+  bottom: 70%;
+  text-align: center;
+  width: 100%;
+  font-style: italic;
+  color: white;
+  top: 0;
+  padding: 10%;
+}
+.text p {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  width: 300px;
+  bottom: 65%;
+  border: 3px solid yellow;
+  cursor: pointer;
+  padding: 10px 0;
+  border-radius: 30%;
+  background-color: orange;
+}
+.outer {
+  background: grey;
+  position: relative;
+  width: 40%;
+  padding-left: 100px;
+  display: inline-table;
+  text-align: left;
+  margin-top: 3%;
+  vertical-align: top;
+
+}
+.inner {
+  position: absolute;
+  left: 10%;
+  top: 0px;
+  width: 50px;
+  height: 50px;
+  text-align: left;
+}
+.outer h4 {
+  margin-top: 0;
+  margin-bottom: 5px;
+  padding: 2% 5%;
+}
+.outer p {
+  margin-top: 0px;
+  padding: 0 5%;
+
+}
+.bigouter {
+  background-color: grey;
+  width: 100%;
+  text-align: center;
+  padding-bottom: 3%
+}
+
+#footer {
+
+  font-size: 14px;
+  padding: 5px 0;
+  background-color: #778899;
+
+}
+/*background: url() no-repeat;
+//background-size:
+
+//vertical centering
+//css property transoform
+*/
+@media (max-width: 420px) {
+  .outer {
+    display: block;
+    width: 100%;
+    margin-top: 0px;
+  }
+  #logo {
+    height: 60px;
+    width: 250px;
+  }
+  .bigouter {
+    padding-top: 1.5%;
+  }
+  .text p {
+    width: 120px;
+  }
+  .text h1 {
+    font-size: 20px;
+  }
+  .text {
+    top: 20px;
+  }
+  #menu {
+    margin: 17px 17px;
+    height: 30px;
+  }
+  .sidemenu {
+    width: 120px;
+    height: 100%;
+  }
+  .sidemenu p {
+    font-size: 17px;
+  }
+}

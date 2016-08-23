@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="stylesheets.css"/>
+    <title>hangman</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <h2 id="questionMessage"> Do you want  to guess all letters now?</h2>
+    <h2 id="askForWord"> Type the word in the box </h2>
+    <h2 id="askForLetter"> Type the letter in the box </h2>
+    <button id="startButton"> START </button>
+    <button id="startAgain"> START AGAIN </button>
+    <div id="blanks"></div>
+    <input name="s" type="text" maxlength="1" id="inputLetter" class="letterInput"/>
+    <input name="guessInput" type="text" maxlength="12" id="inputGuess" class="inputGuess"/>
+    <button id="yes"> YES </button>
+    <button id="no"> NO </button>
+    <button id="inputButton"> SUBMIT A LETTER </button>
+    <button id='submitaWord'> SUBMIT A WORD </button>
+    <div id="wrongLetters"></div>
+    <div id="figure">
+        <div id="stickFigure">
+            <div id="head"></div>
+            <div id="body"></div>
+            <div id="leftarm"></div>
+            <div id="rightarm"></div>
+            <div id="leftleg"></div>
+            <div id="rightleg"></div>
+        </div>
+        <div id="base"></div>
+        <div id="verticalBar"></div>
+        <div id="upperBar"></div>
+        <div id="rope"></div>
+    </div>
+    <div id="end"></div>
+    <script src="hangman.js"></script>
+</body>
+</html>

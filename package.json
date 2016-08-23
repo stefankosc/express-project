@@ -1,0 +1,28 @@
+{
+  "name": "express-project",
+  "version": "1.0.0",
+  "description": "awesome express project number 1",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stefankosc/express-project.git"
+  },
+  "keywords": [
+    "awesome",
+    "express"
+  ],
+  "author": "ste",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stefankosc/express-project/issues"
+  },
+  "homepage": "https://github.com/stefankosc/express-project#readme",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.14.0"
+  }
+}
