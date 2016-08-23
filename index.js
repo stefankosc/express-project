@@ -2,6 +2,10 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var app = express();
+var hb = require('express-handlebars');
+
+app.engine('handlebars', hb());
+app.set('view engine', 'handlebars');
 
 app.use(express.static(__dirname + '/projects'));
 app.use(cookieParser());
@@ -19,6 +23,20 @@ app.use(function (req, res, next) {
     next();
 });
 
+var directory = ['/projects/hangMan/', '/projects/kittyWebsite/', '/projects/ticker/', '/projects/spotifySearch/', '/projects/reichstagWebsite/'];
+var dataForTemplate = {
+    projects: directory.map(function(item) {
+        return {
+            url: item,
+            text: item.slice(10)
+        };
+    })
+}
+console.log(dataForTemplate.projects);
+app.get('/website', function (req, res) {
+    res.render('website', dataForTemplate);
+});
+
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/projects/name/index.html');
     console.log(req.cookies);
@@ -29,7 +47,7 @@ app.post('/name', function(req, res) {
         res.redirect('/name/index.html');
         return;
     } else {
-        res.cookie('cook', 'value', {maxAge: 5000});
+        res.cookie('cook', 'value');
         res.redirect('/hello/world');
     };
 });
