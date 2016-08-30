@@ -9,7 +9,6 @@
         Handlebars.templates[script.id] = Handlebars.compile(script.innerHTML);
     });
 
-
     var element = $('#ticker');
     var currentPosition = element.position().left;
     var inner = $('#inner');
@@ -17,11 +16,11 @@
     var myreq;
     var data;
 
-    inner.html(Handlebars.templates.hello({
-        name: 'World'
-    }));
+    //inner.html(Handlebars.templates.hello({
+    //    name: 'World'
+    //}));
 
-    $.get('links.json', function(data) {
+    $.get('/twitterFeed', function(data) {
         //do something with data
         insertLinksFromJSON(data);
         step();
@@ -77,8 +76,4 @@
     element.on('mouseleave', function() {
             myreq = requestAnimationFrame(step);
     });
-
-
-
-
 })();

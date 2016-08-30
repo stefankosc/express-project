@@ -1,0 +1,9 @@
+w pierwszej kojelności wywołuję funkcję getTweetsFromSource z callbackiem,
+ktory przyjmuje dwa argumenty (err, tweets) i przekazuje je dalej kiedy funkcja
+zostaje wyeksportowana. getTweetsFromSource najpierw wywoluje getData, ktory
+dostaje jako callback funkcje getDataCallback. getData kiedy zostaje wywolane
+przygotowuje zestaw opcji potrzebnych zeby zassac token z twittera i nastepnie
+przekazuje te opcje i callback do funkcji prepareRequest. prepareRequest
+przyjmuje opcje i callback jako argumenty i wywoluje funkcje 'request' z modulu
+https, ktora przyjmuje opcje i na tej podstawie przygotowuje żądanie, ktore jest
+zwrocone. 

@@ -3,6 +3,8 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var app = express();
 var hb = require('express-handlebars');
+//var getTweets = require('./projects/ticker/twitterRequest');
+var getTweetsUsingPromises = require('./projects/ticker/twitterRequestUsingPromises');
 
 app.engine('handlebars', hb());
 app.set('view engine', 'handlebars');
@@ -35,6 +37,17 @@ var dataForTemplate = {
     })
 }
 
+app.get('/twitterFeed', function(req, res) {
+
+    getTweetsUsingPromises().then(function(tweets) {
+        console.log(tweets);
+        res.json(tweets);
+    }).catch(function(err) {
+        console.log(err);
+        res.sendStatus(500);
+    });
+});
+
 app.get('/projects/:name', function(req, res) {
 
     var matched = directory.some(function(item) {
@@ -45,7 +58,7 @@ app.get('/projects/:name', function(req, res) {
         res.render('project', {
             description: 'This is ' + description + ' ' + req.params.name,
             link: req.params.name,
-            layout: 'myLayout'
+            layout: 'myPortfolio'
         })
     } else {
         res.sendStatus(404);
