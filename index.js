@@ -3,22 +3,23 @@ var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var app = express();
 var hb = require('express-handlebars');
+var pg = require('pg');
 //var getTweets = require('./projects/ticker/twitterRequest');
 var getTweetsUsingPromises = require('./projects/ticker/twitterRequestUsingPromises');
+var credentials = require('./credentials');
 
 app.engine('handlebars', hb());
 app.set('view engine', 'handlebars');
 
 app.use(express.static(__dirname + '/projects'));
 app.use(express.static(__dirname + '/static'));
-
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({
     extended: false
 }));
 
 app.use(function (req, res, next) {
-    if (!req.cookies.cookied) {
+    if (!req.cookies.data) {
         if (!req.url.startsWith('/name')) {
             res.redirect('/name/index.html');
             return;
@@ -59,7 +60,7 @@ app.get('/projects/:name', function(req, res) {
             description: 'This is ' + description + ' ' + req.params.name,
             link: req.params.name,
             layout: 'myPortfolio'
-        })
+        });
     } else {
         res.sendStatus(404);
     }
@@ -79,10 +80,46 @@ app.post('/name', function(req, res) {
         res.redirect('/name/index.html');
         return;
     } else {
-        res.cookie('cookied', 'value');
-        res.redirect('/hello/world');
+        var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
+        client.connect(function(err) {
+            if (err) {
+            console.log("There was an error when creating to database" + err);
+            }
+        });
+        var query = 'INSERT INTO user_names(name, surname) VALUES($1, $2)';
+        var firstname = req.body.firstname;
+        var lastname = req.body.lastname;
+        client.query(query, [firstname, lastname], function(err, results) {
+            if (err) {
+                console.log('Error is: ' + err);
+            } else {
+                client.end();
+                res.cookie('data', req.body.firstname + ' ' + req.body.lastname);
+                res.redirect('/hello/world');
+            }
+        });
     }
 });
+
+app.get('/users', function(req, res) {
+    var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
+    client.connect(function(err) {
+        if (err) {
+            console.log('err');
+        }
+    })
+    var query = 'SELECT * FROM user_names';
+    client.query(query, function (err, results) {
+        
+        if (err) {
+            console.log('Error is: ' + err);
+        } else {
+            client.end();
+            console.log(results);
+            res.send('<!doctype html><title>whats up</title><p>' + results.rows + 'Whats up</html>');
+        }
+    })
+})
 
 app.get('/hello/world', function(req, res) {
     res.send('<!doctype html><title>Hello World!</title><p>Hello World!</html>');
