@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>projects</title>
+</head>
+<body>
+    {{>part}}
+    <div class="dataAboutUsers">
+        <table>
+            <tr>
+              <th>First name</th>
+              <th>Last name</th>
+            </tr>
+            {{#projects}}
+            <tr>
+                <td>{{name}}</td>
+                <td>{{surname}}</td>
+            </tr>
+            {{/projects}}
+        </table>
+    </div>
+    {{>part}}
+<body>
+</html>

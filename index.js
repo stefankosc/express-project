@@ -37,7 +37,6 @@ var dataForTemplate = {
         }
     })
 }
-
 app.get('/twitterFeed', function(req, res) {
 
     getTweetsUsingPromises().then(function(tweets) {
@@ -64,7 +63,8 @@ app.get('/projects/:name', function(req, res) {
     } else {
         res.sendStatus(404);
     }
-})
+});
+
 app.get('/website', function (req, res) {
 
     res.render('website', dataForTemplate);
@@ -95,7 +95,7 @@ app.post('/name', function(req, res) {
             } else {
                 client.end();
                 res.cookie('data', req.body.firstname + ' ' + req.body.lastname);
-                res.redirect('/hello/world');
+                res.redirect('/formWithDetails');
             }
         });
     }
@@ -110,18 +110,31 @@ app.get('/users', function(req, res) {
     })
     var query = 'SELECT * FROM user_names';
     client.query(query, function (err, results) {
-        
+
         if (err) {
             console.log('Error is: ' + err);
         } else {
             client.end();
-            console.log(results);
-            res.send('<!doctype html><title>whats up</title><p>' + results.rows + 'Whats up</html>');
+
+            var usersData = {
+                projects: results.rows.map(function(item) {
+                    return {
+                        name: item.name,
+                        surname: item.surname
+                    }
+                })
+            }
+            res.render('usersData', usersData);
         }
-    })
+    });
+});
+
+app.get('/formWithDetails', function (req, res) {
+    res.redirect('/name/details.html');
 })
 
 app.get('/hello/world', function(req, res) {
     res.send('<!doctype html><title>Hello World!</title><p>Hello World!</html>');
 });
+
 app.listen(8080);
