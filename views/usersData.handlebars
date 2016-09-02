@@ -11,15 +11,27 @@
             <tr>
               <th>First name</th>
               <th>Last name</th>
+              <th>Age</th>
+              <th>city_of_residence</th>
+              <th>homepage_url</th>
+              <th>favorite_color</th>
             </tr>
-            {{#projects}}
+            {{#data}}
             <tr>
                 <td>{{name}}</td>
                 <td>{{surname}}</td>
+                <td>{{age}}</td>
+                <td>{{city_of_residence}}</td>
+                <td>{{homepage_url}}</td>
+                <td>{{favorite_color}}</td>
             </tr>
-            {{/projects}}
+            {{/data}}
         </table>
     </div>
+    <select>
+        <option> artist </option>
+        <option> album </option>
+    </select>
     {{>part}}
 <body>
 </html>

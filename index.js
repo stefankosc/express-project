@@ -83,10 +83,10 @@ app.post('/name', function(req, res) {
         var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
         client.connect(function(err) {
             if (err) {
-            console.log("There was an error when creating to database" + err);
+                console.log("There was an error when creating to database" + err);
             }
         });
-        var query = 'INSERT INTO user_names(name, surname) VALUES($1, $2)';
+        var query = 'INSERT INTO user_names(name, surname) VALUES($1, $2) RETURNING id';
         var firstname = req.body.firstname;
         var lastname = req.body.lastname;
         client.query(query, [firstname, lastname], function(err, results) {
@@ -95,10 +95,39 @@ app.post('/name', function(req, res) {
             } else {
                 client.end();
                 res.cookie('data', req.body.firstname + ' ' + req.body.lastname);
-                res.redirect('/formWithDetails');
+                res.redirect('/name/details.html');
             }
         });
     }
+});
+
+app.post('/details', function(req, res) {
+    if (!req.body.Age.length || !req.body.City.length || !req.body.homepageURL || !req.body.favoriteColor) {
+        res.redirect('/name/details.html');
+        return;
+    } else {
+        var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
+        client.connect(function(err) {
+            if (err) {
+                console.log("There is an error while connecting to database");
+            }
+        });
+        var query = 'INSERT INTO user_profile(age, city_of_residence, homepage_url, favorite_color) VALUES($1, $2, $3, $4) RETURNING id';
+        var age = req.body.Age;
+        var city = req.body.City;
+        var homepage = req.body.homepageURL;
+        var favColor = req.body.favoriteColor;
+        client.query(query, [age, city, homepage, favColor], function (err, results) {
+            if (err) {
+                console.log("error");
+            } else {
+                client.end();
+                res.redirect('/website');
+            }
+        });
+    }
+    var request = req.body;
+    console.log(request);
 });
 
 app.get('/users', function(req, res) {
@@ -107,20 +136,24 @@ app.get('/users', function(req, res) {
         if (err) {
             console.log('err');
         }
-    })
-    var query = 'SELECT * FROM user_names';
+    });
+    var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.id;';
     client.query(query, function (err, results) {
 
         if (err) {
-            console.log('Error is: ' + err);
+            console.log(err);
         } else {
             client.end();
-
+            console.log(results.rows);
             var usersData = {
-                projects: results.rows.map(function(item) {
+                data: results.rows.map(function(item) {
                     return {
                         name: item.name,
-                        surname: item.surname
+                        surname: item.surname,
+                        age: item.age,
+                        city_of_residence: item.city_of_residence,
+                        homepage_url: item.homepage_url,
+                        favorite_color: item.favorite_color
                     }
                 })
             }
@@ -128,10 +161,6 @@ app.get('/users', function(req, res) {
         }
     });
 });
-
-app.get('/formWithDetails', function (req, res) {
-    res.redirect('/name/details.html');
-})
 
 app.get('/hello/world', function(req, res) {
     res.send('<!doctype html><title>Hello World!</title><p>Hello World!</html>');
