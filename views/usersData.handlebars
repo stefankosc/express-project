@@ -7,11 +7,14 @@
 <body>
     {{>part}}
     <h3>Select city of residence</h3>
-    <select>
-        {{#data}}
-        <option>{{city_of_residence}}</option>
-        {{/data}}
-    </select>
+    <form action="/city" method="post">
+        <select name="select">
+            {{#data}}
+            <option>{{city_of_residence}}</option>
+            {{/data}}
+        </select>
+        <input type="submit">
+    </form>
     <p></p>
     <div class="dataAboutUsers">
         <table>

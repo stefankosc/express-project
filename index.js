@@ -91,7 +91,7 @@ app.post('/name', function(req, res) {
         var lastname = req.body.lastname;
         client.query(query, [firstname, lastname], function(err, results) {
             if (err) {
-                console.log('Error is: ' + err);
+                console.log(err);
             } else {
                 console.log(results.rows[0].id);
                 client.end();
@@ -108,7 +108,6 @@ app.post('/details', function(req, res) {
         res.redirect('/name/details.html');
         return;
     } else {
-        console.log(req.cookies.userID);
         var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
         client.connect(function(err) {
             if (err) {
@@ -133,6 +132,36 @@ app.post('/details', function(req, res) {
     var request = req.body;
 });
 
+app.post('/city', function(req, res) {
+    var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
+    client.connect(function(err) {
+        if (err) {
+            console.log('err');
+        }
+    });
+    var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id WHERE user_profile.city_of_residence = $1;';
+    client.query(query, [req.body.select], function (err, results) {
+        if (err) {
+            console.log(err);
+        } else {
+            client.end();
+            var usersData = {
+                data: results.rows.map(function(item) {
+                    return {
+                        name: item.name,
+                        surname: item.surname,
+                        age: item.age,
+                        city_of_residence: item.city_of_residence,
+                        homepage_url: item.homepage_url,
+                        favorite_color: item.favorite_color
+                    }
+                })
+            }
+            res.render('usersData', usersData);
+        }
+    })
+})
+
 app.get('/users', function(req, res) {
     var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
     client.connect(function(err) {
@@ -147,7 +176,6 @@ app.get('/users', function(req, res) {
             console.log(err);
         } else {
             client.end();
-            console.log(results.rows);
             var usersData = {
                 data: results.rows.map(function(item) {
                     return {
