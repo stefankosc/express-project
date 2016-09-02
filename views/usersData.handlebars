@@ -2,10 +2,17 @@
 <html>
 <head>
 
-    <title>projects</title>
+    <title>users</title>
 </head>
 <body>
     {{>part}}
+    <h3>Select city of residence</h3>
+    <select>
+        {{#data}}
+        <option>{{city_of_residence}}</option>
+        {{/data}}
+    </select>
+    <p></p>
     <div class="dataAboutUsers">
         <table>
             <tr>
@@ -28,10 +35,7 @@
             {{/data}}
         </table>
     </div>
-    <select>
-        <option> artist </option>
-        <option> album </option>
-    </select>
+
     {{>part}}
 <body>
 </html>

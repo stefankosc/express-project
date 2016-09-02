@@ -93,8 +93,10 @@ app.post('/name', function(req, res) {
             if (err) {
                 console.log('Error is: ' + err);
             } else {
+                console.log(results.rows[0].id);
                 client.end();
-                res.cookie('data', req.body.firstname + ' ' + req.body.lastname);
+                res.cookie('data', req.body.firstname + ' ' + req.body.lastname );
+                res.cookie('userID', results.rows[0].id);
                 res.redirect('/name/details.html');
             }
         });
@@ -102,32 +104,33 @@ app.post('/name', function(req, res) {
 });
 
 app.post('/details', function(req, res) {
-    if (!req.body.Age.length || !req.body.City.length || !req.body.homepageURL || !req.body.favoriteColor) {
+    if (!req.body.Age || !req.body.City || !req.body.homepageURL || !req.body.favoriteColor) {
         res.redirect('/name/details.html');
         return;
     } else {
+        console.log(req.cookies.userID);
         var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
         client.connect(function(err) {
             if (err) {
-                console.log("There is an error while connecting to database");
+                console.log(err);
             }
         });
-        var query = 'INSERT INTO user_profile(age, city_of_residence, homepage_url, favorite_color) VALUES($1, $2, $3, $4) RETURNING id';
+        var query = 'INSERT INTO user_profile(age, city_of_residence, homepage_url, favorite_color, user_id) VALUES($1, $2, $3, $4, $5)';
         var age = req.body.Age;
         var city = req.body.City;
         var homepage = req.body.homepageURL;
         var favColor = req.body.favoriteColor;
-        client.query(query, [age, city, homepage, favColor], function (err, results) {
+        var foreignID = req.cookies.userID;
+        client.query(query, [age, city, homepage, favColor, foreignID], function (err, results) {
             if (err) {
-                console.log("error");
+                console.log(err);
             } else {
                 client.end();
-                res.redirect('/website');
+                res.redirect('/users');
             }
         });
     }
     var request = req.body;
-    console.log(request);
 });
 
 app.get('/users', function(req, res) {
@@ -137,7 +140,7 @@ app.get('/users', function(req, res) {
             console.log('err');
         }
     });
-    var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.id;';
+    var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id;';
     client.query(query, function (err, results) {
 
         if (err) {
