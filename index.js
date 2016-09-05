@@ -143,17 +143,35 @@ app.post('/details', function(req, res) {
             }
         });
     }
-    var request = req.body;
 });
-
-
-
 
 app.get('/users', function(req, res) {
     cache.get('users', function (err, data) {
 
-        if (err == null) {
+        if (data !== null) {
+            console.log(data);
+            try {
+            var parsedCachedData = JSON.parse(data);
+            console.log(parsedCachedData);
+        } catch (err) {
+            console.log(err);
+        }
+            var usersData = {
+                data: parsedCachedData.map(function(item) {
+                    return {
+                        name: item.name,
+                        surname: item.surname,
+                        age: item.age,
+                        city_of_residence: item.city_of_residence,
+                        homepage_url: item.homepage_url,
+                        favorite_color: item.favorite_color
+                    }
+                })
+            }
+        res.render('usersData', usersData);
 
+        } else {
+            console.log('elo');
             var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
             client.connect(function(err) {
                 if (err) {
@@ -184,10 +202,9 @@ app.get('/users', function(req, res) {
                 }
                 res.render('usersData', usersData);
             });
-        } 
+        }
     });
 });
-
 
 app.post('/city', function(req, res) {
     var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
