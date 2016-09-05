@@ -9,9 +9,9 @@
     <h3>Select city of residence</h3>
     <form action="/city" method="post">
         <select name="select">
-            {{#data}}
+            {{#cities}}
             <option>{{city_of_residence}}</option>
-            {{/data}}
+            {{/cities}}
         </select>
         <input type="submit">
     </form>
@@ -26,7 +26,7 @@
               <th>homepage_url</th>
               <th>favorite_color</th>
             </tr>
-            {{#data}}
+            {{#users}}
             <tr>
                 <td>{{name}}</td>
                 <td>{{surname}}</td>
@@ -35,7 +35,7 @@
                 <td>{{homepage_url}}</td>
                 <td>{{favorite_color}}</td>
             </tr>
-            {{/data}}
+            {{/users}}
         </table>
     </div>
 

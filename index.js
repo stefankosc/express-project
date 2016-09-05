@@ -19,7 +19,6 @@ app.use(bodyParser.urlencoded({
     extended: false
 }));
 
-
 var cache = redis.createClient({
     host: 'localhost',
     port: 6379
@@ -28,9 +27,6 @@ var cache = redis.createClient({
 cache.on('error', function (err) {
     console.log(err);
 })
-
-
-
 
 app.use(function (req, res, next) {
     if (!req.cookies.data) {
@@ -145,33 +141,37 @@ app.post('/details', function(req, res) {
     }
 });
 
+var returnObjectForHandlebars = function (item) {
+    return {
+        name: item.name,
+        surname: item.surname,
+        age: item.age,
+        city_of_residence: item.city_of_residence,
+        homepage_url: item.homepage_url,
+        favorite_color: item.favorite_color
+    }
+}
+
 app.get('/users', function(req, res) {
     cache.get('users', function (err, data) {
 
-        if (data !== null) {
-            console.log(data);
+        if (data !== null && !err) {
+
             try {
-            var parsedCachedData = JSON.parse(data);
-            console.log(parsedCachedData);
-        } catch (err) {
-            console.log(err);
-        }
-            var usersData = {
-                data: parsedCachedData.map(function(item) {
-                    return {
-                        name: item.name,
-                        surname: item.surname,
-                        age: item.age,
-                        city_of_residence: item.city_of_residence,
-                        homepage_url: item.homepage_url,
-                        favorite_color: item.favorite_color
-                    }
-                })
+                var parsedCachedData = JSON.parse(data);
+
+            } catch (err) {
+                console.log(err);
             }
-        res.render('usersData', usersData);
+
+            var dataAboutUsers = parsedCachedData.map(returnObjectForHandlebars);
+
+            var cityData = parsedCachedData.map(returnObjectForHandlebars);
+
+            res.render('usersData', {users: dataAboutUsers, cities: cityData});
 
         } else {
-            console.log('elo');
+
             var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
             client.connect(function(err) {
                 if (err) {
@@ -187,20 +187,12 @@ app.get('/users', function(req, res) {
 
                     cache.set('users', JSON.stringify(results.rows));
                     client.end();
-                    var usersData = {
-                        data: results.rows.map(function(item) {
-                            return {
-                                name: item.name,
-                                surname: item.surname,
-                                age: item.age,
-                                city_of_residence: item.city_of_residence,
-                                homepage_url: item.homepage_url,
-                                favorite_color: item.favorite_color
-                            }
-                        })
-                    }
+
+                    var dataAboutUsers = results.rows.map(returnObjectForHandlebars);
+                    var cityData = results.map(returnObjectForHandlebars);
                 }
-                res.render('usersData', usersData);
+
+                res.render('usersData', {users: dataAboutUsers, cities: cityData});
             });
         }
     });
@@ -215,61 +207,47 @@ app.post('/city', function(req, res) {
     });
 
     var counter = 2;
-    var cities;
-    var filteredRows;
+    var dataForCitySelection;
+    var usersDataBasedOnCity;
 
-
-    var query1 = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id;';
-    client.query(query1, function (err, results) {
+    var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id;';
+    client.query(query, function (err, results) {
         if (err) {
             console.log(err);
         } else {
             client.end();
-            var detailData = {
-                cityData: results.rows.map(function(item) {
-                    return {
-                        name: item.name,
-                        surname: item.surname,
-                        age: item.age,
-                        city_of_residence: item.city_of_residence,
-                        homepage_url: item.homepage_url,
-                        favorite_color: item.favorite_color
-                    }
-                })
 
-            }
-
+                detaForCitySelection = results.rows.map(returnObjectForHandlebars);
             counter--;
-            //if (counter == 0)
-        }
 
+            if (counter == 0) {
+
+                res.render('usersData', {cities: detaForCitySelection, users: usersDataBasedOnCity});
+            }
+        }
     });
 
-    var query2 = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id WHERE user_profile.city_of_residence = $1;';
-    client.query(query2, [req.body.select], function (err, results) {
+    var client1 = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
+    client1.connect(function(err) {
+        if (err) {
+            console.log(err);
+        }
+    });
+
+    var query1 = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id WHERE user_profile.city_of_residence = $1;';
+    client1.query(query1, [req.body.select], function (err, results) {
         if (err) {
             console.log(err);
         } else {
-            client.end();
-            var usersData = {
-                data: results.rows.map(function(item) {
-                    return {
-                        name: item.name,
-                        surname: item.surname,
-                        age: item.age,
-                        city_of_residence: item.city_of_residence,
-                        homepage_url: item.homepage_url,
-                        favorite_color: item.favorite_color
-                    }
-                })
-            }
+            client1.end();
+
+                usersDataBasedOnCity = results.rows.map(returnObjectForHandlebars);
             counter--;
+            if (counter == 0) {
+                res.render('usersData', {cities: detaForCitySelection, users: usersDataBasedOnCity});
+            }
         }
-
-
     })
-
-
 })
 
 app.get('/hello/world', function(req, res) {
