@@ -7,6 +7,7 @@ var pg = require('pg');
 //var getTweets = require('./projects/ticker/twitterRequest');
 var getTweetsUsingPromises = require('./projects/ticker/twitterRequestUsingPromises');
 var credentials = require('./credentials');
+var redis = require('redis');
 
 app.engine('handlebars', hb());
 app.set('view engine', 'handlebars');
@@ -17,6 +18,19 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({
     extended: false
 }));
+
+
+var cache = redis.createClient({
+    host: 'localhost',
+    port: 6379
+});
+
+cache.on('error', function (err) {
+    console.log(err);
+})
+
+
+
 
 app.use(function (req, res, next) {
     if (!req.cookies.data) {
@@ -132,15 +146,90 @@ app.post('/details', function(req, res) {
     var request = req.body;
 });
 
+
+
+
+app.get('/users', function(req, res) {
+    cache.get('users', function (err, data) {
+
+        if (err == null) {
+
+            var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
+            client.connect(function(err) {
+                if (err) {
+                    console.log(err);
+                }
+            });
+
+            var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id;';
+            client.query(query, function (err, results) {
+                if (err) {
+                    console.log(err);
+                } else {
+
+                    cache.set('users', JSON.stringify(results.rows));
+                    client.end();
+                    var usersData = {
+                        data: results.rows.map(function(item) {
+                            return {
+                                name: item.name,
+                                surname: item.surname,
+                                age: item.age,
+                                city_of_residence: item.city_of_residence,
+                                homepage_url: item.homepage_url,
+                                favorite_color: item.favorite_color
+                            }
+                        })
+                    }
+                }
+                res.render('usersData', usersData);
+            });
+        } 
+    });
+});
+
+
 app.post('/city', function(req, res) {
     var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
     client.connect(function(err) {
         if (err) {
-            console.log('err');
+            console.log(err);
         }
     });
-    var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id WHERE user_profile.city_of_residence = $1;';
-    client.query(query, [req.body.select], function (err, results) {
+
+    var counter = 2;
+    var cities;
+    var filteredRows;
+
+
+    var query1 = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id;';
+    client.query(query1, function (err, results) {
+        if (err) {
+            console.log(err);
+        } else {
+            client.end();
+            var detailData = {
+                cityData: results.rows.map(function(item) {
+                    return {
+                        name: item.name,
+                        surname: item.surname,
+                        age: item.age,
+                        city_of_residence: item.city_of_residence,
+                        homepage_url: item.homepage_url,
+                        favorite_color: item.favorite_color
+                    }
+                })
+
+            }
+
+            counter--;
+            //if (counter == 0)
+        }
+
+    });
+
+    var query2 = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id WHERE user_profile.city_of_residence = $1;';
+    client.query(query2, [req.body.select], function (err, results) {
         if (err) {
             console.log(err);
         } else {
@@ -157,41 +246,14 @@ app.post('/city', function(req, res) {
                     }
                 })
             }
-            res.render('usersData', usersData);
+            counter--;
         }
+
+
     })
+
+
 })
-
-app.get('/users', function(req, res) {
-    var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
-    client.connect(function(err) {
-        if (err) {
-            console.log('err');
-        }
-    });
-    var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id;';
-    client.query(query, function (err, results) {
-
-        if (err) {
-            console.log(err);
-        } else {
-            client.end();
-            var usersData = {
-                data: results.rows.map(function(item) {
-                    return {
-                        name: item.name,
-                        surname: item.surname,
-                        age: item.age,
-                        city_of_residence: item.city_of_residence,
-                        homepage_url: item.homepage_url,
-                        favorite_color: item.favorite_color
-                    }
-                })
-            }
-            res.render('usersData', usersData);
-        }
-    });
-});
 
 app.get('/hello/world', function(req, res) {
     res.send('<!doctype html><title>Hello World!</title><p>Hello World!</html>');
