@@ -8,6 +8,19 @@ var pg = require('pg');
 var getTweetsUsingPromises = require('./projects/ticker/twitterRequestUsingPromises');
 var credentials = require('./credentials');
 var redis = require('redis');
+var session = require('express-session');
+var Store = require('connect-redis')(session);
+
+app.use(session({
+    store: new Store({
+        ttl: 3600,
+        host: 'localhost',
+        port: 6379
+    }),
+    resave: false,
+    saveUninitialized: true,
+    secret: 'my super fun secret'
+}));
 
 app.engine('handlebars', hb());
 app.set('view engine', 'handlebars');
@@ -29,7 +42,7 @@ cache.on('error', function (err) {
 })
 
 app.use(function (req, res, next) {
-    if (!req.cookies.data) {
+    if (!req.session.user) {
         if (!req.url.startsWith('/name')) {
             res.redirect('/name/index.html');
             return;
@@ -82,10 +95,11 @@ app.get('/website', function (req, res) {
 
 app.get('/', function (req, res) {
     res.sendFile(__dirname + '/projects/name/index.html');
-    console.log(req.cookies);
+
 });
 
 app.post('/name', function(req, res) {
+    cache.del('users');
     if (!req.body.firstname.length || !req.body.lastname.length) {
         res.redirect('/name/index.html');
         return;
@@ -105,8 +119,14 @@ app.post('/name', function(req, res) {
             } else {
                 console.log(results.rows[0].id);
                 client.end();
-                res.cookie('data', req.body.firstname + ' ' + req.body.lastname );
-                res.cookie('userID', results.rows[0].id);
+
+                req.session.user = {
+                    data: req.body.firstname + ' ' + req.body.lastname,
+                    userID: results.rows[0].id
+                }
+                //res.cookie('data', req.body.firstname + ' ' + req.body.lastname );
+                //res.cookie('userID', results.rows[0].id);
+
                 res.redirect('/name/details.html');
             }
         });
@@ -129,7 +149,8 @@ app.post('/details', function(req, res) {
         var city = req.body.City;
         var homepage = req.body.homepageURL;
         var favColor = req.body.favoriteColor;
-        var foreignID = req.cookies.userID;
+        var foreignID = req.session.user.userID;
+
         client.query(query, [age, city, homepage, favColor, foreignID], function (err, results) {
             if (err) {
                 console.log(err);
@@ -153,8 +174,9 @@ var returnObjectForHandlebars = function (item) {
 }
 
 app.get('/users', function(req, res) {
-    cache.get('users', function (err, data) {
 
+    cache.get('users', function (err, data) {
+        console.log(data);
         if (data !== null && !err) {
 
             try {
@@ -189,7 +211,7 @@ app.get('/users', function(req, res) {
                     client.end();
 
                     var dataAboutUsers = results.rows.map(returnObjectForHandlebars);
-                    var cityData = results.map(returnObjectForHandlebars);
+                    var cityData = results.rows.map(returnObjectForHandlebars);
                 }
 
                 res.render('usersData', {users: dataAboutUsers, cities: cityData});
@@ -197,6 +219,8 @@ app.get('/users', function(req, res) {
         }
     });
 });
+
+
 
 app.post('/city', function(req, res) {
     var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
@@ -249,6 +273,15 @@ app.post('/city', function(req, res) {
         }
     })
 })
+
+app.get('/logout', function(req, res) {
+    req.session.destroy(function(err) {
+        if (err) {
+            console.log(err);
+        }
+    });
+    res.redirect('/name/index.html');
+});
 
 app.get('/hello/world', function(req, res) {
     res.send('<!doctype html><title>Hello World!</title><p>Hello World!</html>');
