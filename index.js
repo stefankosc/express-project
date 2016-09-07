@@ -10,6 +10,7 @@ var credentials = require('./credentials');
 var redis = require('redis');
 var session = require('express-session');
 var Store = require('connect-redis')(session);
+var bcrypt = require('bcrypt');
 
 app.use(session({
     store: new Store({
@@ -21,6 +22,22 @@ app.use(session({
     saveUninitialized: true,
     secret: 'my super fun secret'
 }));
+
+function hashPassword(plainTextPassword, callback) {
+    bcrypt.genSalt(function(err, salt) {
+        if (err) {
+            return callback(err);
+        }
+        console.log(salt);
+        bcrypt.hash(plainTextPassword, salt, function(err, hash) {
+            if (err) {
+                return callback(err);
+            }
+            console.log(hash);
+            callback(null, hash);
+        });
+    });
+}
 
 app.engine('handlebars', hb());
 app.set('view engine', 'handlebars');
@@ -110,25 +127,34 @@ app.post('/name', function(req, res) {
                 console.log("There was an error when creating to database" + err);
             }
         });
-        var query = 'INSERT INTO user_names(name, surname) VALUES($1, $2) RETURNING id';
+        var query = 'INSERT INTO user_names(name, surname, email, hash) VALUES($1, $2, $3, $4) RETURNING id';
         var firstname = req.body.firstname;
         var lastname = req.body.lastname;
-        client.query(query, [firstname, lastname], function(err, results) {
+        var email = req.body.email;
+
+        hashPassword(req.body.password, function(err, hash) {
             if (err) {
                 console.log(err);
-            } else {
-                console.log(results.rows[0].id);
-                client.end();
-
-                req.session.user = {
-                    data: req.body.firstname + ' ' + req.body.lastname,
-                    userID: results.rows[0].id
-                }
-                //res.cookie('data', req.body.firstname + ' ' + req.body.lastname );
-                //res.cookie('userID', results.rows[0].id);
-
-                res.redirect('/name/details.html');
             }
+
+            client.query(query, [firstname, lastname, email, hash], function(err, results) {
+                if (err) {
+                    console.log(err);
+                } else {
+                    console.log(results.rows[0].id);
+                    client.end();
+
+                    req.session.user = {
+                        data: req.body.firstname + ' ' + req.body.lastname,
+                        userID: results.rows[0].id,
+                        email: email
+                    }
+                    //res.cookie('data', req.body.firstname + ' ' + req.body.lastname );
+                    //res.cookie('userID', results.rows[0].id);
+
+                    res.redirect('/name/details.html');
+                }
+            });
         });
     }
 });
@@ -176,7 +202,7 @@ var returnObjectForHandlebars = function (item) {
 app.get('/users', function(req, res) {
 
     cache.get('users', function (err, data) {
-        console.log(data);
+
         if (data !== null && !err) {
 
             try {
@@ -185,12 +211,15 @@ app.get('/users', function(req, res) {
             } catch (err) {
                 console.log(err);
             }
+            var uniqueCities = [];
+            parsedCachedData.forEach(function(item) {
+                if (uniqueCities.indexOf(item.city_of_residence) < 0) {
+                    uniqueCities.push(item.city_of_residence);
+                }
+            });
 
             var dataAboutUsers = parsedCachedData.map(returnObjectForHandlebars);
-
-            var cityData = parsedCachedData.map(returnObjectForHandlebars);
-
-            res.render('usersData', {users: dataAboutUsers, cities: cityData});
+            res.render('usersData', {users: dataAboutUsers, cities: uniqueCities});
 
         } else {
 
@@ -271,8 +300,8 @@ app.post('/city', function(req, res) {
                 res.render('usersData', {cities: detaForCitySelection, users: usersDataBasedOnCity});
             }
         }
-    })
-})
+    });
+});
 
 app.get('/logout', function(req, res) {
     req.session.destroy(function(err) {

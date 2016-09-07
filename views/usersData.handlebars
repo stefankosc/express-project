@@ -10,7 +10,7 @@
     <form action="/city" method="post">
         <select name="select">
             {{#cities}}
-            <option>{{city_of_residence}}</option>
+            <option>{{.}}</option>
             {{/cities}}
         </select>
         <input type="submit">
