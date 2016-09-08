@@ -39,6 +39,16 @@ function hashPassword(plainTextPassword, callback) {
     });
 }
 
+function checkPassword(textEnteredInLoginForm, hashedPasswordFromDatabase, callback) {
+    bcrypt.compare(textEnteredInLoginForm, hashedPasswordFromDatabase, function(err, doesMatch) {
+        if (err) {
+            return callback(err);
+        }
+        console.log(doesMatch);
+        callback(null, doesMatch);
+    });
+}
+
 app.engine('handlebars', hb());
 app.set('view engine', 'handlebars');
 
@@ -77,6 +87,11 @@ var dataForTemplate = {
         }
     })
 }
+
+app.get('/name/index.html', function (req, res) {
+    res.render('index');
+})
+
 app.get('/twitterFeed', function(req, res) {
 
     getTweetsUsingPromises().then(function(tweets) {
@@ -87,6 +102,80 @@ app.get('/twitterFeed', function(req, res) {
         res.sendStatus(500);
     });
 });
+
+app.get('/login', function (req, res) {
+    res.render('login');
+})
+
+
+
+
+
+
+
+
+
+
+
+
+app.post('/login', function (req, res) {
+
+    if (!req.body.email.length || !req.body.password.length) {
+        res.redirect('login');
+        return;
+    }
+    var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
+    client.connect(function(err) {
+
+        if (err) {
+            console.log(err);
+            console.log('pass');
+        }
+    });
+
+    var query = 'SELECT * FROM user_names WHERE user_names.email = $1';
+    var email = req.body.email;
+
+    client.query(query, [email], function (err, results) {
+
+        if (!results.rows.length) {
+            err = true;
+        }
+
+        console.log(results.rows);
+
+        if (err) {
+            console.log('im here');
+            var errorWhileLogin = ['Email adress or password is incorrect'];
+            res.render('login', {loginError: errorWhileLogin});
+
+        } else {
+
+            client.end();
+            checkPassword(req.body.password, results.rows[0].hash, function (err, doesMatch) {
+
+                if (err) {
+
+                    var errorWhileLogin = ['Email adress or password is incorrect'];
+                    res.render('login', {loginError: errorWhileLogin});
+
+                }
+
+                if (doesMatch == true) {
+                    console.log('password match');
+                    res.end('password match!!!!');
+
+                } else {
+
+                    var errorWhileLogin = ['Email adress or password is incorrect'];
+                    res.render('login', {loginError: errorWhileLogin});
+
+                }
+            });
+        }
+    });
+});
+
 
 app.get('/projects/:name', function(req, res) {
 
@@ -140,6 +229,11 @@ app.post('/name', function(req, res) {
             client.query(query, [firstname, lastname, email, hash], function(err, results) {
                 if (err) {
                     console.log(err);
+
+                    var duplicateEmailError = ['Email exists in a database'];
+
+                    res.render('index', {emailError: duplicateEmailError});
+
                 } else {
                     console.log(results.rows[0].id);
                     client.end();
@@ -248,8 +342,6 @@ app.get('/users', function(req, res) {
         }
     });
 });
-
-
 
 app.post('/city', function(req, res) {
     var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
