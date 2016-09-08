@@ -10,7 +10,7 @@ var credentials = require('./credentials');
 var redis = require('redis');
 var session = require('express-session');
 var Store = require('connect-redis')(session);
-var bcrypt = require('bcrypt');
+var functions = require('./functions');
 
 app.use(session({
     store: new Store({
@@ -23,31 +23,6 @@ app.use(session({
     secret: 'my super fun secret'
 }));
 
-function hashPassword(plainTextPassword, callback) {
-    bcrypt.genSalt(function(err, salt) {
-        if (err) {
-            return callback(err);
-        }
-        console.log(salt);
-        bcrypt.hash(plainTextPassword, salt, function(err, hash) {
-            if (err) {
-                return callback(err);
-            }
-            console.log(hash);
-            callback(null, hash);
-        });
-    });
-}
-
-function checkPassword(textEnteredInLoginForm, hashedPasswordFromDatabase, callback) {
-    bcrypt.compare(textEnteredInLoginForm, hashedPasswordFromDatabase, function(err, doesMatch) {
-        if (err) {
-            return callback(err);
-        }
-        console.log(doesMatch);
-        callback(null, doesMatch);
-    });
-}
 
 app.engine('handlebars', hb());
 app.set('view engine', 'handlebars');
@@ -95,7 +70,6 @@ app.get('/name/index.html', function (req, res) {
 app.get('/twitterFeed', function(req, res) {
 
     getTweetsUsingPromises().then(function(tweets) {
-        console.log(tweets);
         res.json(tweets);
     }).catch(function(err) {
         console.log(err);
@@ -107,74 +81,43 @@ app.get('/login', function (req, res) {
     res.render('login');
 })
 
-
-
-
-
-
-
-
-
-
-
-
 app.post('/login', function (req, res) {
 
     if (!req.body.email.length || !req.body.password.length) {
-        res.redirect('login');
-        return;
-    }
-    var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
-    client.connect(function(err) {
 
-        if (err) {
-            console.log(err);
-            console.log('pass');
-        }
-    });
+        loginErrorHandlingMessage();
+    }
+
+    var client = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
 
     var query = 'SELECT * FROM user_names WHERE user_names.email = $1';
     var email = req.body.email;
 
     client.query(query, [email], function (err, results) {
-
         if (!results.rows.length) {
             err = true;
         }
-
-        console.log(results.rows);
-
         if (err) {
-            console.log('im here');
-            var errorWhileLogin = ['Email adress or password is incorrect'];
-            res.render('login', {loginError: errorWhileLogin});
-
+            loginErrorHandlingMessage();
         } else {
-
             client.end();
-            checkPassword(req.body.password, results.rows[0].hash, function (err, doesMatch) {
-
+            functions.checkPassword(req.body.password, results.rows[0].hash, function (err, doesMatch) {
                 if (err) {
-
-                    var errorWhileLogin = ['Email adress or password is incorrect'];
-                    res.render('login', {loginError: errorWhileLogin});
-
+                    loginErrorHandlingMessage();
                 }
-
                 if (doesMatch == true) {
-                    console.log('password match');
+
                     res.end('password match!!!!');
-
                 } else {
-
-                    var errorWhileLogin = ['Email adress or password is incorrect'];
-                    res.render('login', {loginError: errorWhileLogin});
-
+                    loginErrorHandlingMessage();
                 }
             });
         }
     });
 });
+
+
+
 
 
 app.get('/projects/:name', function(req, res) {
@@ -210,18 +153,14 @@ app.post('/name', function(req, res) {
         res.redirect('/name/index.html');
         return;
     } else {
-        var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
-        client.connect(function(err) {
-            if (err) {
-                console.log("There was an error when creating to database" + err);
-            }
-        });
+        var client = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
+
         var query = 'INSERT INTO user_names(name, surname, email, hash) VALUES($1, $2, $3, $4) RETURNING id';
         var firstname = req.body.firstname;
         var lastname = req.body.lastname;
         var email = req.body.email;
 
-        hashPassword(req.body.password, function(err, hash) {
+        functions.hashPassword(req.body.password, function(err, hash) {
             if (err) {
                 console.log(err);
             }
@@ -235,7 +174,6 @@ app.post('/name', function(req, res) {
                     res.render('index', {emailError: duplicateEmailError});
 
                 } else {
-                    console.log(results.rows[0].id);
                     client.end();
 
                     req.session.user = {
@@ -243,9 +181,6 @@ app.post('/name', function(req, res) {
                         userID: results.rows[0].id,
                         email: email
                     }
-                    //res.cookie('data', req.body.firstname + ' ' + req.body.lastname );
-                    //res.cookie('userID', results.rows[0].id);
-
                     res.redirect('/name/details.html');
                 }
             });
@@ -258,12 +193,8 @@ app.post('/details', function(req, res) {
         res.redirect('/name/details.html');
         return;
     } else {
-        var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
-        client.connect(function(err) {
-            if (err) {
-                console.log(err);
-            }
-        });
+        var client = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
+
         var query = 'INSERT INTO user_profile(age, city_of_residence, homepage_url, favorite_color, user_id) VALUES($1, $2, $3, $4, $5)';
         var age = req.body.Age;
         var city = req.body.City;
@@ -317,12 +248,8 @@ app.get('/users', function(req, res) {
 
         } else {
 
-            var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
-            client.connect(function(err) {
-                if (err) {
-                    console.log(err);
-                }
-            });
+            var client = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
+
 
             var query = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id;';
             client.query(query, function (err, results) {
@@ -344,12 +271,8 @@ app.get('/users', function(req, res) {
 });
 
 app.post('/city', function(req, res) {
-    var client = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
-    client.connect(function(err) {
-        if (err) {
-            console.log(err);
-        }
-    });
+    var client = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
+
 
     var counter = 2;
     var dataForCitySelection;
@@ -372,12 +295,8 @@ app.post('/city', function(req, res) {
         }
     });
 
-    var client1 = new pg.Client('postgres://' + credentials.pgUser + ':' + credentials.pgPassword + '@localhost:5432/users');
-    client1.connect(function(err) {
-        if (err) {
-            console.log(err);
-        }
-    });
+    var client1 = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
+
 
     var query1 = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id WHERE user_profile.city_of_residence = $1;';
     client1.query(query1, [req.body.select], function (err, results) {
