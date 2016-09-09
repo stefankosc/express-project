@@ -148,52 +148,54 @@ app.post('/homepage', function (req, res) {
     var updatedURL = req.body.updateHomepageURL;
     var updatedColor = req.body.updateFavoriteColor;
 
-    functions.hashPassword(req.body.updatePassword, function(err, hash) {
-        if (err) {
-            console.log(err);
-        }
-        var client = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
-        var query = 'UPDATE user_names SET name = $1, surname = $2, email = $3, hash = $4 WHERE id = $5;';
+    function makeRequest(callback) {
 
-        client.query(query, [updatedName, updatedSurname, updatedEmail, hash, req.session.user.id], function(err, results) {
+        functions.hashPassword(req.body.updatePassword, function(err, hash) {
+            if (err) {
+                console.log(err);
+            }
+            var client = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
+            var query = 'UPDATE user_names SET name = $1, surname = $2, email = $3, hash = $4 WHERE id = $5;';
 
+            client.query(query, [updatedName, updatedSurname, updatedEmail, hash, req.session.user.id], function(err, results) {
+
+                if (err) {
+                    console.log(err);
+                } else {
+                    client.end();
+
+                    var client1 = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
+                    var query1 = 'UPDATE user_profile SET age = $1, city_of_residence = $2, homepage_url = $3, favorite_color = $4 WHERE user_id = $5;';
+
+                    client1.query(query1, [updatedAge, updatedCityOfResidence, updatedURL, updatedColor, req.session.user.id], function (err, results) {
+                        if (err) {
+                            console.log(err);
+                        } else {
+
+                            callback();
+                            client1.end();
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    function displayData () {
+
+        var client2 = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
+        var query2 = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id WHERE user_names.id = $1;';
+        client2.query(query2, [req.session.user.id], function (err,results) {
             if (err) {
                 console.log(err);
             } else {
-                client.end();
+                client2.end();
+                res.render('homepage', {userDetails: results.rows[0]});
             }
         });
-
-        var client1 = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
-        var query1 = 'UPDATE user_profile SET age = $1, city_of_residence = $2, homepage_url = $3, favorite_color = $4 WHERE user_id = $5;';
-
-
-        client1.query(query1, [updatedAge, updatedCityOfResidence, updatedURL, updatedColor, req.session.user.id], function (err, results) {
-            if (err) {
-                console.log(err);
-            } else {
-                client1.end();
-            }
-        });
-    });
-
-
-    var client2 = functions.createNewPsqlClient(credentials.pgUser, credentials.pgPassword);
-    var query2 = 'SELECT * FROM user_names JOIN user_profile ON user_names.id = user_profile.user_id WHERE user_names.id = $1;';
-    client2.query(query2, [req.session.user.id], function (err,results) {
-        if (err) {
-            console.log(err);
-        } else {
-            client2.end();
-            res.render('homepage', {userDetails: results.rows[0]});
-        }
-    });
-
+    }
+    makeRequest(displayData);
 });
-
-
-
-
 
 app.get('/projects/:name', function(req, res) {
 
