@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>homepage</title>
+</head>
+<body>
+    {{>part}}
+    <h3>Select city of residence</h3>
+    <p></p>
+    <div class="dataAboutUser">
+
+        <table>
+            <tr>
+              <th>First name</th>
+              <th>Last name</th>
+              <th>email</th>
+              <th>Age</th>
+              <th>city_of_residence</th>
+              <th>homepage_url</th>
+              <th>favorite_color</th>
+            </tr>
+            {{#userDetails}}
+            <tr>
+                <td>{{name}}</td>
+                <td>{{surname}}</td>
+                <td>{{email}}</td>
+                <td>{{age}}</td>
+                <td>{{city_of_residence}}</td>
+                <td>{{homepage_url}}</td>
+                <td>{{favorite_color}}</td>
+            </tr>
+            {{/userDetails}}
+
+        </table>
+    </div>
+    <h2>Update data</h2>
+    {{#userDetails}}
+    <form action="/homepage" method="post">
+        First name:<br>
+        <input class="update" type="text" name="updateFirstname" value="{{name}}"><br>
+        Last name:<br>
+        <input class="update" type="text" name="updateLastname" value="{{surname}}"><br>
+        Email adress:<br>
+        <input class="update" type="text" name="updateEmail" value="{{email}}"><br>
+        Password: <br>
+        <input class="update" type="text" name="updatePassword" value=""><br>
+        Age:<br>
+        <input class="update" type="text" name="updateAge" value="{{age}}"><br>
+        City of residence:<br>
+        <input class="update" type="text" name="updateCity" value="{{city_of_residence}}"><br>
+        Homepage url:<br>
+        <input class="update" type="text" name="updateHomepageURL" value="{{homepage_url}}"><br>
+        Favorite color:<br>
+        <input class="update" type="text" name="updateFavoriteColor" value="{{favorite_color}}"><br>
+        <input type="submit">
+    </form>
+    {{/userDetails}}
+    {{>part}}
+    <a href="/logout">logout</>
+<body>
+</html>
