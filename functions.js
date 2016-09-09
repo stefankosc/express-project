@@ -29,7 +29,7 @@ exports.checkPassword = function (textEnteredInLoginForm, hashedPasswordFromData
     });
 }
 
-exports.loginErrorHandlingMessage = function() {
+exports.loginErrorHandlingMessage = function(res) {
         var errorWhileLogin = ['Email adress or password is incorrect'];
         res.render('login', {loginError: errorWhileLogin});
     }
